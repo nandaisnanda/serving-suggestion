@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Votes, Poverty and MBG Kitchens — #30DayMapChallenge Day 3</title>
+  <meta name="description" content="Indonesia's 2024 presidential vote by province, set against poverty, schooling and MBG kitchens.">
+  <meta property="og:title" content="Votes, Poverty and MBG Kitchens">
+  <meta property="og:description" content="2024 presidential vote across 38 provinces, with poverty, schooling and MBG kitchens.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="page">
+    <p id="join-warning" class="join-warning" hidden></p>
+
+    <header class="masthead">
+      <p class="kicker">#30DayMapChallenge · Day 3 · Polygons</p>
+      <h1>Votes, poverty and MBG kitchens</h1>
+      <p class="dek">The 2024 presidential vote in each province, next to poverty, schooling and free-meal kitchens.</p>
+      <p class="byline">Map by Ananda Gunawan · November 2026</p>
+    </header>
+
+    <nav class="tabs" id="tabs" aria-label="Map view">
+      <button data-tab="pemenang">Winner</button>
+      <button data-tab="perolehan">Vote share</button>
+      <button data-tab="kemiskinan">Poverty</button>
+      <button data-tab="pendidikan">Schooling</button>
+      <button data-tab="mbg">MBG kitchens</button>
+      <button data-tab="bivariat">Bivariate</button>
+    </nav>
+
+    <main class="layout">
+      <section class="map-col">
+        <div class="toolbar">
+          <div class="subcontrols" id="subcontrols"></div>
+          <div class="tools">
+            <div class="search">
+              <label for="search" class="sr">Search province</label>
+              <input id="search" type="text" placeholder="Search province" autocomplete="off" role="combobox" aria-expanded="false" aria-controls="search-list">
+              <ul id="search-list" class="search-list" role="listbox" hidden></ul>
+            </div>
+            <button class="pill" id="reset">Reset</button>
+          </div>
+        </div>
+
+        <div id="figure" class="figure card">
+          <p class="figure-title" id="figure-title"></p>
+          <div id="map" class="map" aria-label="Map of Indonesian provinces"></div>
+          <div id="multi" class="multi" hidden>
+            <div><p class="mini-label">01 Anies–Muhaimin</p><div class="mini" id="m01"></div></div>
+            <div><p class="mini-label">02 Prabowo–Gibran</p><div class="mini" id="m02"></div></div>
+            <div><p class="mini-label">03 Ganjar–Mahfud</p><div class="mini" id="m03"></div></div>
+          </div>
+          <div class="legend-card">
+            <p class="legend-head">Legend</p>
+            <div id="legend" class="legend"></div>
+          </div>
+          <p class="figure-source">Sources: KPU, BPS, National Nutrition Agency · Map by Ananda Gunawan</p>
+        </div>
+
+        <div class="actions">
+          <button class="pill" id="btn-table">View table</button>
+          <button class="pill" id="btn-csv">Download CSV</button>
+          <button class="pill" id="btn-png">Download PNG</button>
+          <button class="pill" id="btn-method">Methodology</button>
+        </div>
+
+        <details class="provlist card">
+          <summary>All provinces</summary>
+          <ul id="provlist"></ul>
+        </details>
+      </section>
+
+      <aside class="panel card" id="panel" aria-live="polite"></aside>
+    </main>
+
+    <footer class="footer">
+      <p>Sources: KPU, official 2024 presidential tally (domestic votes); BPS, Susenas March 2026 (poverty); BPS, HDI (mean years of schooling); National Nutrition Agency, SPPG locations as of 8 June 2026; boundaries: 38 Indonesian provinces (GeoJSON).</p>
+    </footer>
+  </div>
+
+  <div class="overlay" id="ov-detail" hidden role="dialog" aria-modal="true" aria-labelledby="d-title">
+    <div class="overlay-inner">
+      <div class="overlay-head">
+        <h2 id="d-title">Province details</h2>
+        <button class="pill" data-close>Close</button>
+      </div>
+      <div id="detail-body"></div>
+    </div>
+  </div>
+
+  <div class="overlay" id="ov-table" hidden role="dialog" aria-modal="true" aria-labelledby="t-title">
+    <div class="overlay-inner wide">
+      <div class="overlay-head">
+        <h2 id="t-title">All 38 provinces</h2>
+        <button class="pill" data-close>Close</button>
+      </div>
+      <input id="table-filter" type="text" placeholder="Filter by province" class="filter">
+      <div class="table-wrap"><table id="table"></table></div>
+    </div>
+  </div>
+
+  <div class="overlay" id="ov-method" hidden role="dialog" aria-modal="true" aria-labelledby="m-title">
+    <div class="overlay-inner">
+      <div class="overlay-head">
+        <h2 id="m-title">Methodology</h2>
+        <button class="pill" data-close>Close</button>
+      </div>
+      <ul class="method">
+        <li>The unit is the province (38). Correlations between provinces are not causal and say nothing about individual voters.</li>
+        <li>The MBG program began in January 2025, after the 2024 election.</li>
+        <li>SPPG counts follow population size, so a version per 100k people in poverty is included.</li>
+        <li>With n = 38, Spearman's ρ is a hint, not proof. Ties use average ranks; p-values use the t approximation (df = 36).</li>
+        <li>Margin = winner's share minus runner-up's share, in percentage points.</li>
+        <li>Poverty, schooling and SPPG per 100k use quantiles (5 classes); bivariate uses terciles (3 × 3).</li>
+        <li>Ticket colors are only markers and imply no judgment.</li>
+      </ul>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script src="js/stats.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
