@@ -436,6 +436,7 @@
   /** Refresh everything that depends on the view. */
   function renderMap() {
     const multi = state.tab === "perolehan" && state.multi;
+    $("#figure").classList.toggle("is-multi", multi);
     $("#map").hidden = multi;
     $("#multi").hidden = !multi;
     if (multi) {
