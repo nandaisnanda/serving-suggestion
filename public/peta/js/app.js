@@ -54,6 +54,7 @@
   let geo = null;
   let map, geoLayer, circleLayer, miniMaps = [];
   let charts = [];
+  let syncing = false;    // guards the mini-map view sync
   const centroids = {};
   const breaksCache = {};
 
@@ -230,12 +231,29 @@
     return b || geoLayer.getBounds();
   }
 
+  /** Publish the floating header's height so panels and popups can clear it. */
+  function syncHud() {
+    const hud = $(".hud");
+    if (hud) document.documentElement.style.setProperty("--hud-h", hud.offsetHeight + "px");
+  }
+
+  function setDrawer(open) {
+    const d = $("#drawer");
+    d.classList.toggle("open", open);
+    d.inert = !open;
+    $("#app").classList.toggle("drawer-open", open);
+    $("#btn-insights").setAttribute("aria-pressed", String(open));
+  }
+
   /** Fit all provinces, leaving room for the floating header on top. */
   function fitIndonesia(animate = true) {
+    syncHud();
     const hud = $(".hud");
     const top = hud ? hud.offsetHeight + 12 : 8;
     map.invalidateSize();
-    map.fitBounds(idnBounds(), { paddingTopLeft: [12, top], paddingBottomRight: [12, 12], animate });
+    const bounds = idnBounds();
+    map.setMinZoom(map.getBoundsZoom(bounds, false, L.point(24, top + 12)) - 1);
+    map.fitBounds(bounds, { paddingTopLeft: [12, top], paddingBottomRight: [12, 12], animate });
   }
 
   function initMap() {
@@ -258,24 +276,27 @@
     bases["Light"].addTo(map); labels.addTo(map);
     L.control.layers(bases, { "Place labels": labels }, { position: "bottomright", collapsed: true }).addTo(map);
     L.control.scale({ imperial: false, position: "bottomleft" }).addTo(map);
-    const Full = L.Control.extend({ options: { position: "bottomright" }, onAdd() {
-      const b = L.DomUtil.create("a", "leaflet-bar leaflet-fs"); b.href = "#"; b.title = "Full screen"; b.innerHTML = "⛶";
-      L.DomEvent.on(b, "click", (e) => { L.DomEvent.preventDefault(e); L.DomEvent.stopPropagation(e);
-        const fig = document.getElementById("figure");
-        if (document.fullscreenElement) document.exitFullscreen();
-        else if (fig.requestFullscreen) fig.requestFullscreen(); else fig.classList.toggle("is-full");
+    const Tools = L.Control.extend({ options: { position: "bottomright" }, onAdd() {
+      const box = L.DomUtil.create("div", "leaflet-bar");
+      const btn = (glyph, title, fn) => {
+        const b = L.DomUtil.create("a", "leaflet-fs", box); b.href = "#"; b.title = title; b.setAttribute("role", "button"); b.setAttribute("aria-label", title); b.textContent = glyph;
+        L.DomEvent.on(b, "click", (e) => { L.DomEvent.preventDefault(e); L.DomEvent.stopPropagation(e); fn(); });
+      };
+      btn("⌂", "Fit Indonesia", () => fitIndonesia());
+      if (document.fullscreenEnabled) btn("⛶", "Full screen", () => {
+        if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen();
       });
-      return b;
+      L.DomEvent.disableClickPropagation(box);
+      return box;
     } });
-    new Full().addTo(map);
-    document.addEventListener("fullscreenchange", () => setTimeout(() => map.invalidateSize(), 150));
+    new Tools().addTo(map);
+    document.addEventListener("fullscreenchange", () => setTimeout(() => { map.invalidateSize(); syncHud(); }, 150));
     geo.features.forEach((f) => { if (f.properties._key) centroids[f.properties._key] = centroidOf(f); });
     geoLayer = L.geoJSON(geo, { style: styleFor, onEachFeature: bindFeature }).addTo(map);
     circleLayer = L.layerGroup();
     const b = idnBounds();
     fitIndonesia(false);
-    map.setMinZoom(map.getZoom() - 1);
-    map.setMaxBounds(b.pad(0.5));
+    map.setMaxBounds(b.pad(1));
   }
 
   function bindFeature(feature, layer) {
@@ -322,7 +343,6 @@
       }).addTo(m);
       miniMaps.push({ m, layer, p });
     });
-    let syncing = false;
     miniMaps.forEach(({ m }) => {
       m.on("move", () => {
         if (syncing) return;
@@ -334,7 +354,9 @@
   }
 
   function fitMinis() {
-    miniMaps.forEach(({ m, layer }) => { m.invalidateSize(); m.fitBounds(layer.getBounds(), { padding: [2, 2] }); });
+    syncing = true;
+    miniMaps.forEach(({ m, layer }) => { m.invalidateSize(); m.fitBounds(layer.getBounds(), { padding: [8, 8], animate: false }); });
+    syncing = false;
   }
 
   /* ------------------------------------------------------------------
@@ -451,6 +473,7 @@
       map.closePopup();
       buildMiniMaps();
       requestAnimationFrame(fitMinis);
+      setTimeout(fitMinis, 250);
     } else {
       map.invalidateSize();
     }
@@ -471,6 +494,7 @@
     renderLegend();
     renderMap();
     renderPanel();
+    syncHud();
     writeURL();
   }
 
@@ -706,7 +730,8 @@
     if (opts.noPopup) return;
     if (state.tab === "perolehan" && state.multi) { openDetail(key); return; }
     const at = latlng || centroids[key];
-    L.popup({ maxWidth: 300, autoPanPadding: [16, 16], className: "prov-pop" }).setLatLng(at).setContent(popupHTML(r)).openOn(map);
+    const hudH = $(".hud").offsetHeight;
+    L.popup({ maxWidth: 300, autoPanPaddingTopLeft: [16, hudH + 16], autoPanPaddingBottomRight: [16, 16], className: "prov-pop" }).setLatLng(at).setContent(popupHTML(r)).openOn(map);
   }
 
   function writeURL() {
@@ -764,15 +789,6 @@
     input.addEventListener("blur", close);
   }
 
-  function initProvList() {
-    $("#provlist").innerHTML = rows.slice().sort((a, b) => a.name.localeCompare(b.name, "en"))
-      .map((r) => `<li><button data-key="${r.key}">${esc(r.name)}</button></li>`).join("");
-    $("#provlist").addEventListener("click", (e) => {
-      const b = e.target.closest("button");
-      if (b) { select(b.dataset.key); $("#figure").scrollIntoView({ block: "start", behavior: "smooth" }); }
-    });
-  }
-
   /* ------------------------------------------------------------------
      10. Table, CSV, PNG, overlays
      ------------------------------------------------------------------ */
@@ -821,8 +837,16 @@
   async function downloadPNG() {
     const fig = $("#figure");
     await document.fonts.ready;
-    const canvas = await html2canvas(fig, { backgroundColor: css("--paper"), scale: 2, useCORS: true, logging: false,
-      ignoreElements: (el) => el.classList && (el.classList.contains("leaflet-control-container") || el.classList.contains("leaflet-popup-pane")) });
+    const card = $("#legend-card");
+    const wasCollapsed = card.classList.contains("collapsed");
+    card.classList.remove("collapsed");
+    let canvas;
+    try {
+      canvas = await html2canvas(fig, { backgroundColor: css("--paper"), scale: 2, useCORS: true, logging: false,
+        ignoreElements: (el) => el.classList && (el.classList.contains("leaflet-control-container") || el.classList.contains("leaflet-popup-pane")) });
+    } finally {
+      card.classList.toggle("collapsed", wasCollapsed);
+    }
     // Compose with a masthead above the figure.
     const pad = 48, headH = 150;
     const out = document.createElement("canvas");
@@ -880,6 +904,8 @@
       if (b) openDetail(b.dataset.detail);
     });
     $(".legend-head").addEventListener("click", () => $(".legend-card").classList.toggle("collapsed"));
+    $("#btn-insights").addEventListener("click", () => setDrawer(!$("#drawer").classList.contains("open")));
+    $("#drawer-close").addEventListener("click", () => setDrawer(false));
     $("#reset").addEventListener("click", () => {
       Object.assign(state, { tab: "pemenang", pair: "02", multi: false, mbgMode: "jumlah", bivPair: "02", bivVar: "miskin", sel: null, cmp: null });
       map.closePopup();
@@ -904,7 +930,10 @@
       ov.addEventListener("click", (e) => { if (e.target === ov || e.target.hasAttribute("data-close")) ov.hidden = true; });
     });
     document.addEventListener("keydown", (e) => {
-      if (e.key === "Escape") document.querySelectorAll(".overlay").forEach((ov) => (ov.hidden = true));
+      if (e.key !== "Escape") return;
+      const open = [...document.querySelectorAll(".overlay")].some((ov) => !ov.hidden);
+      document.querySelectorAll(".overlay").forEach((ov) => (ov.hidden = true));
+      if (!open) setDrawer(false);
     });
     let t;
     window.addEventListener("resize", () => { clearTimeout(t); t = setTimeout(() => { fitIndonesia(false); miniMaps.forEach(({ m }) => m.invalidateSize()); }, 150); });
@@ -930,9 +959,10 @@
     initMap();
     buildCircles();
     initSearch();
-    initProvList();
     bindEvents();
+    if (window.innerWidth <= 700) $("#legend-card").classList.add("collapsed");
     renderAll();
+    fitIndonesia(false);
     if (state.sel) select(state.sel);
   }
 

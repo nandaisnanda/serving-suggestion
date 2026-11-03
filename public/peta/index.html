@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Votes, Poverty and MBG Kitchens — #30DayMapChallenge Day 3</title>
   <meta name="description" content="Indonesia's 2024 presidential vote by province, set against poverty, schooling and MBG kitchens.">
   <meta property="og:title" content="Votes, Poverty and MBG Kitchens">
@@ -14,80 +14,82 @@
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-  <div class="hero">
-    <div class="hud">
-    <p id="join-warning" class="join-warning" hidden></p>
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <defs>
+      <symbol id="i-chart" viewBox="0 0 24 24"><path d="M5 20V11M12 20V4M19 20v-6"/></symbol>
+      <symbol id="i-table" viewBox="0 0 24 24"><rect x="3.5" y="4.5" width="17" height="15" rx="2.5"/><path d="M3.5 10h17M9.5 10v9.5"/></symbol>
+      <symbol id="i-csv" viewBox="0 0 24 24"><path d="M12 4v10m0 0-4-4m4 4 4-4M5 19h14"/></symbol>
+      <symbol id="i-img" viewBox="0 0 24 24"><rect x="3.5" y="4.5" width="17" height="15" rx="2.5"/><path d="m4 17 5-5 4 4 2.5-2.5L20 18"/><circle cx="15.5" cy="9" r="1.2"/></symbol>
+      <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 11v5.5M12 7.8v.1"/></symbol>
+      <symbol id="i-reset" viewBox="0 0 24 24"><path d="M4.5 12a7.5 7.5 0 1 0 2.4-5.5M4.5 4.5v4h4"/></symbol>
+      <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4 4"/></symbol>
+      <symbol id="i-close" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></symbol>
+    </defs>
+  </svg>
 
-    <header class="masthead">
-      <p class="kicker">#30DayMapChallenge · Day 3 · Polygons</p>
-      <h1>Votes, poverty and MBG kitchens</h1>
-      <p class="dek">The 2024 presidential vote in each province, next to poverty, schooling and free-meal kitchens.</p>
-      <p class="byline">Map by Ananda Gunawan · November 2026</p>
-    </header>
-
-    <nav class="tabs" id="tabs" aria-label="Map view">
-      <button data-tab="pemenang">Winner</button>
-      <button data-tab="perolehan">Vote share</button>
-      <button data-tab="kemiskinan">Poverty</button>
-      <button data-tab="pendidikan">Schooling</button>
-      <button data-tab="mbg">MBG kitchens</button>
-      <button data-tab="bivariat">Bivariate</button>
-    </nav>
-
-        <div class="toolbar">
-          <div class="subcontrols" id="subcontrols"></div>
-          <div class="tools">
-            <div class="search">
-              <label for="search" class="sr">Search province</label>
-              <input id="search" type="text" placeholder="Search province" autocomplete="off" role="combobox" aria-expanded="false" aria-controls="search-list">
-              <ul id="search-list" class="search-list" role="listbox" hidden></ul>
-            </div>
-            <button class="pill" id="reset">Reset</button>
-          </div>
+  <div class="hero" id="app">
+    <div id="figure" class="figure">
+      <div class="map-wrap">
+        <div id="map" class="map" aria-label="Map of Indonesian provinces"></div>
+        <div id="multi" class="multi" hidden>
+          <div><p class="mini-label">01 Anies–Muhaimin</p><div class="mini" id="m01"></div></div>
+          <div><p class="mini-label">02 Prabowo–Gibran</p><div class="mini" id="m02"></div></div>
+          <div><p class="mini-label">03 Ganjar–Mahfud</p><div class="mini" id="m03"></div></div>
         </div>
+        <div class="legend-card" id="legend-card">
+          <p class="legend-head" id="figure-title"></p>
+          <div id="legend" class="legend"></div>
+        </div>
+      </div>
+      <p class="figure-source">Sources: KPU, BPS, National Nutrition Agency · Map by Ananda Gunawan</p>
     </div>
 
-        <div id="figure" class="figure card">
-          <p class="figure-title" id="figure-title"></p>
-          <div class="map-wrap">
-            <div id="map" class="map" aria-label="Map of Indonesian provinces"></div>
-            <div id="multi" class="multi" hidden>
-              <div><p class="mini-label">01 Anies–Muhaimin</p><div class="mini" id="m01"></div></div>
-              <div><p class="mini-label">02 Prabowo–Gibran</p><div class="mini" id="m02"></div></div>
-              <div><p class="mini-label">03 Ganjar–Mahfud</p><div class="mini" id="m03"></div></div>
-            </div>
-            <div class="legend-card">
-              <p class="legend-head">Legend</p>
-              <div id="legend" class="legend"></div>
-            </div>
+    <div class="hud">
+      <p id="join-warning" class="join-warning" hidden></p>
+
+      <div class="topbar">
+        <header class="brand">
+          <p class="kicker">#30DayMapChallenge · Day 3 · Polygons</p>
+          <h1>Votes, poverty and MBG kitchens</h1>
+        </header>
+
+        <nav class="tabs" id="tabs" aria-label="Map view">
+          <button data-tab="pemenang">Winner</button>
+          <button data-tab="perolehan">Vote share</button>
+          <button data-tab="kemiskinan">Poverty</button>
+          <button data-tab="pendidikan">Schooling</button>
+          <button data-tab="mbg">MBG kitchens</button>
+          <button data-tab="bivariat">Bivariate</button>
+        </nav>
+
+        <div class="tools">
+          <div class="search">
+            <svg class="ico" aria-hidden="true"><use href="#i-search"/></svg>
+            <label for="search" class="sr">Search province</label>
+            <input id="search" type="text" placeholder="Search province" autocomplete="off" role="combobox" aria-expanded="false" aria-controls="search-list">
+            <ul id="search-list" class="search-list" role="listbox" hidden></ul>
           </div>
-          <p class="figure-source">Sources: KPU, BPS, National Nutrition Agency · Map by Ananda Gunawan</p>
+          <button class="pill solid" id="btn-insights" aria-pressed="false" aria-controls="drawer">
+            <svg class="ico" aria-hidden="true"><use href="#i-chart"/></svg><span class="lbl">Insights</span>
+          </button>
+          <button class="ibtn" id="btn-table" title="View table" aria-label="View table"><svg class="ico" aria-hidden="true"><use href="#i-table"/></svg></button>
+          <button class="ibtn opt" id="btn-csv" title="Download CSV" aria-label="Download CSV"><svg class="ico" aria-hidden="true"><use href="#i-csv"/></svg></button>
+          <button class="ibtn opt" id="btn-png" title="Download PNG" aria-label="Download PNG"><svg class="ico" aria-hidden="true"><use href="#i-img"/></svg></button>
+          <button class="ibtn" id="btn-method" title="Methodology and sources" aria-label="Methodology and sources"><svg class="ico" aria-hidden="true"><use href="#i-info"/></svg></button>
+          <button class="ibtn" id="reset" title="Reset view" aria-label="Reset view"><svg class="ico" aria-hidden="true"><use href="#i-reset"/></svg></button>
         </div>
-  </div>
+      </div>
 
-  <div class="page">
-    <main class="layout">
-      <section class="map-col">
+      <div class="subrow"><div class="subcontrols" id="subcontrols"></div></div>
+    </div>
 
-        <div class="actions">
-          <button class="pill" id="btn-table">View table</button>
-          <button class="pill" id="btn-csv">Download CSV</button>
-          <button class="pill" id="btn-png">Download PNG</button>
-          <button class="pill" id="btn-method">Methodology</button>
-        </div>
-
-        <details class="provlist card">
-          <summary>All provinces</summary>
-          <ul id="provlist"></ul>
-        </details>
-      </section>
-
-      <aside class="panel card" id="panel" aria-live="polite"></aside>
-    </main>
-
-    <footer class="footer">
-      <p>Sources: KPU, official 2024 presidential tally (domestic votes); BPS, Susenas March 2026 (poverty); BPS, HDI (mean years of schooling); National Nutrition Agency, SPPG locations as of 8 June 2026; boundaries: 38 Indonesian provinces (GeoJSON).</p>
-    </footer>
+    <aside class="drawer" id="drawer" aria-label="Insights" inert>
+      <div class="drawer-head">
+        <h2>Insights</h2>
+        <button class="ibtn" id="drawer-close" title="Close" aria-label="Close insights"><svg class="ico" aria-hidden="true"><use href="#i-close"/></svg></button>
+      </div>
+      <div class="drawer-body" id="panel" aria-live="polite"></div>
+    </aside>
   </div>
 
   <div class="overlay" id="ov-detail" hidden role="dialog" aria-modal="true" aria-labelledby="d-title">
@@ -114,7 +116,7 @@
   <div class="overlay" id="ov-method" hidden role="dialog" aria-modal="true" aria-labelledby="m-title">
     <div class="overlay-inner">
       <div class="overlay-head">
-        <h2 id="m-title">Methodology</h2>
+        <h2 id="m-title">Methodology and sources</h2>
         <button class="pill" data-close>Close</button>
       </div>
       <ul class="method">
@@ -126,6 +128,7 @@
         <li>Poverty, schooling and SPPG per 100k use quantiles (5 classes); bivariate uses terciles (3 × 3).</li>
         <li>Ticket colors are only markers and imply no judgment.</li>
       </ul>
+      <p class="sources">Sources: KPU, official 2024 presidential tally (domestic votes); BPS, Susenas March 2026 (poverty); BPS, HDI (mean years of schooling); National Nutrition Agency, SPPG locations as of 8 June 2026; boundaries: 38 Indonesian provinces (GeoJSON). Map by Ananda Gunawan, November 2026.</p>
     </div>
   </div>
 
