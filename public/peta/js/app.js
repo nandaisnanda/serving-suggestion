@@ -15,9 +15,9 @@
     "02": ["#D6E3F3", "#A2C0E5", "#6B98D0", "#2F6DB5", "#1B4479"],
     "03": ["#F2D7D4", "#E3A6A1", "#D26E68", "#C23A3A", "#7C2222"],
   };
-  const RAMP_POV = ["#EBE3D5", "#D3C1A6", "#B09676", "#85704F", "#56452F"];
-  const RAMP_EDU = ["#DFE9E7", "#B2CBC6", "#82A8A2", "#547E79", "#2E5450"];
-  const RAMP_SPPG = ["#E8E3D6", "#CBC2AC", "#A49A82", "#77705C", "#4A4538"];
+  const RAMP_POV = ["#EDEDED", "#CFCFCF", "#A3A3A3", "#6E6E6E", "#2E2E2E"];
+  const RAMP_EDU = ["#E8EEF2", "#BFCDD8", "#8FA6B8", "#5D7A92", "#2F4559"];
+  const RAMP_SPPG = ["#EDEDED", "#CFCFCF", "#A3A3A3", "#6E6E6E", "#2E2E2E"];
   // Bivariate 3×3: index [y][x], y = 0 low. Neutral → teal (x) / green (y).
   const BIV = [
     ["#E8E8E8", "#B5C0DA", "#6C83B5"],
@@ -26,7 +26,7 @@
   ];
   const MARGIN_BREAKS = [10, 20, 30, 40];
   const SHARE_BREAKS = [20, 40, 60, 80];
-  const NEUTRAL_FILL = "#E2DCCF";
+  const NEUTRAL_FILL = "#DADADA";
 
   const VARS = {
     miskin: { label: "Poverty rate", long: "Poverty rate (%)", unit: "%", d: 2 },
@@ -47,7 +47,7 @@
   const state = {
     tab: "pemenang", pair: "02", multi: false, mbgMode: "jumlah",
     bivPair: "02", bivVar: "miskin", scatterPair: "02",
-    sel: null, cmp: null, hover: null,
+    sel: null, cmp: null, hover: null, dtab: "overview",
   };
   let rows = [];          // joined province records
   let byKey = {};         // key -> record
@@ -512,7 +512,7 @@
     return `<div class="counts">${PAIRS.map((p) => {
       const n = rows.filter((r) => r.menang === p).length;
       return `<div class="count-card"><b style="color:${PAIR_COLOR[p]}">${n}</b><span>${p} ${PAIR_NAME[p]}</span></div>`;
-    }).join("")}</div><p class="hint" style="margin-top:8px">Provinces won, out of 38</p>`;
+    }).join("")}</div>`;
   }
 
   function stackedBar() {
@@ -532,17 +532,27 @@
     ];
   }
 
+  /** Plain-language reading of a Spearman result. */
+  function strengthText(rho, p) {
+    const a = Math.abs(rho);
+    const word = a < 0.2 ? "Very weak" : a < 0.4 ? "Weak" : a < 0.6 ? "Moderate" : a < 0.8 ? "Strong" : "Very strong";
+    const dir = rho < 0 ? "negative" : "positive";
+    return { label: a < 0.2 ? word : `${word} ${dir}`, sig: p < 0.05 };
+  }
+
   function scattersHTML() {
     return `<div class="section">
-      <p class="section-head"><span>How the numbers relate</span>
+      <p class="section-head"><span>Ticket for vote charts</span>
         <span><label for="scatter-pair" class="sr">Ticket</label>
         <select id="scatter-pair">${PAIRS.map((p) => `<option value="${p}" ${p === state.scatterPair ? "selected" : ""}>${p} ${PAIR_NAME[p]}</option>`).join("")}</select></span></p>
+      <p class="hint">Each dot is a province, colored by winner. ρ runs from −1 to +1; near 0 means no clear link.</p></div>
       <div class="scatters">${scatterDefs().map((d, i) => {
         const s = Stats.spearman(rows.map((r) => r[d.x]), rows.map((r) => r[d.y]));
-        const pTxt = s.p < 0.001 ? "< 0.001" : "≈ " + fmt(s.p, 3);
-        return `<div><p class="scatter-title">${d.title}</p><div class="scatter-box"><canvas id="sc${i}"></canvas></div>
-          <p class="rho">Spearman ρ ${fmt(s.rho, 2)} · p ${pTxt} · n ${s.n}</p></div>`;
-      }).join("")}</div></div>`;
+        const pTxt = s.p < 0.001 ? "< 0.001" : fmt(s.p, 3);
+        const t = strengthText(s.rho, s.p);
+        return `<div class="sc-card"><p class="scatter-title">${d.title}</p><div class="scatter-box"><canvas id="sc${i}"></canvas></div>
+          <p class="rho"><b class="badge ${t.sig ? "sig" : ""}">${t.label}</b> ρ ${fmt(s.rho, 2)} · p ${pTxt} · n ${s.n}${t.sig ? "" : " · not significant"}</p></div>`;
+      }).join("")}</div>`;
   }
 
   function strip(key, r) {
@@ -626,12 +636,22 @@
     charts.forEach((c) => c.destroy());
     charts = [];
     const r = state.sel && byKey[state.sel];
-    el.innerHTML = `<div class="section"><p class="section-head"><span>Provinces won</span></p>${winnerCounts()}</div>
-      <div class="section"><p class="section-head"><span>National result, valid votes</span></p>${stackedBar()}</div>
-      ${insightsHTML()}
-      ${scattersHTML()}
-      <div class="section">${r ? `<span class="sel-chip">Highlighted: ${esc(r.name)} <button id="clear-sel" aria-label="Clear selection">×</button></span>`
-        : `<p class="hint">Click a province to see its numbers.</p>`}</div>`;
+    const DT = [["overview", "Overview"], ["relations", "Relationships"], ["province", "Province"]];
+    const bar = `<div class="dtabs-wrap"><div class="seg dtabs" role="tablist">${DT.map(([k, l]) =>
+      `<button role="tab" data-dtab="${k}" aria-pressed="${state.dtab === k}">${l}</button>`).join("")}</div></div>`;
+    let body;
+    if (state.dtab === "relations") {
+      body = scattersHTML();
+    } else if (state.dtab === "province") {
+      body = r
+        ? `<div class="section">${provinceBlock(r, false)}<p style="margin:14px 0 0"><button class="pill" id="clear-sel">Clear selection</button></p></div>`
+        : `<div class="empty"><p><b>No province selected</b></p><p class="hint">Click a province on the map, or search for one, to see its votes, poverty, schooling and MBG kitchens here.</p></div>`;
+    } else {
+      body = `<div class="section"><p class="section-head"><span>Provinces won, out of 38</span></p>${winnerCounts()}</div>
+        <div class="section"><p class="section-head"><span>National result, valid votes</span></p>${stackedBar()}</div>
+        ${insightsHTML()}`;
+    }
+    el.innerHTML = bar + body;
     drawScatters();
   }
 
@@ -724,10 +744,11 @@
     const r = byKey[key];
     if (!r) return;
     state.sel = key;
+    if ($("#drawer").classList.contains("open")) state.dtab = "province";
     renderMap();
     renderPanel();
     writeURL();
-    if (opts.noPopup) return;
+    if (opts.noPopup || $("#drawer").classList.contains("open")) return;
     if (state.tab === "perolehan" && state.multi) { openDetail(key); return; }
     const at = latlng || centroids[key];
     const hudH = $(".hud").offsetHeight;
@@ -891,6 +912,8 @@
       if (e.target.id === "bivvar") { state.bivVar = e.target.value; renderAll(); }
     });
     $("#panel").addEventListener("click", (e) => {
+      const dt = e.target.closest("[data-dtab]");
+      if (dt) { state.dtab = dt.dataset.dtab; renderPanel(); return; }
       if (e.target.id === "clear-sel") { state.sel = null; map.closePopup(); renderMap(); renderPanel(); writeURL(); }
     });
     $("#panel").addEventListener("change", (e) => {
