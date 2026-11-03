@@ -14,7 +14,8 @@
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-  <div class="page">
+  <div class="hero">
+    <div class="hud">
     <p id="join-warning" class="join-warning" hidden></p>
 
     <header class="masthead">
@@ -33,8 +34,6 @@
       <button data-tab="bivariat">Bivariate</button>
     </nav>
 
-    <main class="layout">
-      <section class="map-col">
         <div class="toolbar">
           <div class="subcontrols" id="subcontrols"></div>
           <div class="tools">
@@ -46,6 +45,7 @@
             <button class="pill" id="reset">Reset</button>
           </div>
         </div>
+    </div>
 
         <div id="figure" class="figure card">
           <p class="figure-title" id="figure-title"></p>
@@ -63,6 +63,11 @@
           </div>
           <p class="figure-source">Sources: KPU, BPS, National Nutrition Agency · Map by Ananda Gunawan</p>
         </div>
+  </div>
+
+  <div class="page">
+    <main class="layout">
+      <section class="map-col">
 
         <div class="actions">
           <button class="pill" id="btn-table">View table</button>

@@ -252,3 +252,37 @@ tr:hover td { background: color-mix(in srgb, var(--land) 70%, transparent); }
   .map-wrap .ramp .swatches span, .map-wrap .ticks span { width: 40px; }
   .map-wrap .dir { width: 208px; }
 }
+
+/* Full-screen hero: the map fills the viewport, header floats on top */
+.hero { position: relative; height: 100vh; height: 100dvh; min-height: 520px; }
+.hero .figure { position: absolute; inset: 0; padding: 0; border-radius: 0; box-shadow: none; margin: 0; }
+.hero .map-wrap, .hero .map { height: 100%; border-radius: 0; }
+.hud { position: absolute; z-index: 1100; top: 12px; left: 12px; right: 12px; display: flex; flex-direction: column; align-items: flex-start; gap: 8px; pointer-events: none; }
+.hud > * { pointer-events: auto; }
+.hud .masthead { margin: 0; padding: 10px 16px; background: color-mix(in srgb, var(--paper) 94%, transparent); border-radius: var(--r-md); box-shadow: 0 2px 10px rgba(0,0,0,.18); max-width: 520px; }
+.hud .kicker { margin: 0 0 2px; font-size: 12px; }
+.hud h1 { font-size: 26px; margin: 0; }
+.hud .dek, .hud .byline { display: none; }
+.hud .tabs { margin: 0; }
+.hud .toolbar { align-self: stretch; margin: 0; pointer-events: none; }
+.hud .toolbar > * { pointer-events: auto; }
+.hud .subcontrols { padding: 0; }
+.hud .subcontrols:not(:empty) { background: color-mix(in srgb, var(--paper) 94%, transparent); padding: 4px 8px; border-radius: 999px; box-shadow: 0 2px 10px rgba(0,0,0,.18); }
+.hud .join-warning { background: var(--paper); padding: 6px 12px; border-radius: 12px; }
+.hero .figure-title { position: absolute; z-index: 1000; top: 12px; right: 12px; margin: 0; max-width: 340px; padding: 10px 14px; background: color-mix(in srgb, var(--paper) 94%, transparent); border-radius: var(--r-md); box-shadow: 0 2px 10px rgba(0,0,0,.18); font-size: 14px; pointer-events: none; }
+.hero .figure-source { position: absolute; z-index: 1000; left: 50%; bottom: 6px; transform: translateX(-50%); margin: 0; padding: 2px 10px; font-size: 11px; background: rgba(255,255,255,.8); color: #333; border-radius: 8px; pointer-events: none; white-space: nowrap; }
+.hero .multi { position: absolute; inset: 0; padding: 150px 12px 12px; background: var(--paper); gap: 8px; }
+.hero .mini { height: calc(100% - 22px); border-radius: var(--r-md); }
+.hero .multi > div { min-height: 0; }
+.hero .figure.is-multi .legend-card { position: absolute; max-width: min(calc(100% - 24px), 400px); max-height: 60%; margin: 0; background: color-mix(in srgb, var(--paper) 94%, transparent); box-shadow: 0 2px 10px rgba(0,0,0,.18); z-index: 1000; }
+.page { max-width: 1440px; margin: 0 auto; padding: 32px; }
+@media (max-width: 1100px) { .hero .figure-title { display: none; } }
+@media (max-width: 900px) { .hero .figure-source { display: none; } .hud h1 { font-size: 20px; } .hud .masthead { padding: 8px 12px; } .hero .multi { grid-template-columns: 1fr; overflow-y: auto; padding-top: 170px; } .hero .mini { height: 40vh; } }
+.map-wrap .ramp .swatches span, .map-wrap .ticks span { width: 40px; }
+.map-wrap .dir { width: 208px; }
+.map-wrap .legend-card { max-width: min(calc(100% - 24px), 290px); }
+.legend-head { cursor: pointer; display: flex; justify-content: space-between; gap: 12px; }
+.legend-head::after { content: "–"; color: var(--ink-2); }
+.legend-card.collapsed .legend-head::after { content: "+"; }
+.legend-card.collapsed .legend { display: none; }
+.legend-card.collapsed .legend-head { margin-bottom: 0; }

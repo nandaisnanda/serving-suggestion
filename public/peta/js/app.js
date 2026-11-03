@@ -230,8 +230,17 @@
     return b || geoLayer.getBounds();
   }
 
+  /** Fit all provinces, leaving room for the floating header on top. */
+  function fitIndonesia(animate = true) {
+    const hud = $(".hud");
+    const top = hud ? hud.offsetHeight + 12 : 8;
+    map.invalidateSize();
+    map.fitBounds(idnBounds(), { paddingTopLeft: [12, top], paddingBottomRight: [12, 12], animate });
+  }
+
   function initMap() {
-    map = L.map("map", { preferCanvas: true, zoomSnap: 0.25, attributionControl: true, scrollWheelZoom: true });
+    map = L.map("map", { preferCanvas: true, zoomSnap: 0.25, attributionControl: true, scrollWheelZoom: true, zoomControl: false });
+    L.control.zoom({ position: "bottomright" }).addTo(map);
     map.attributionControl.setPrefix(false);
     // Keyless raster basemaps (work on GitHub Pages). Labels sit above the choropleth.
     map.createPane("labels"); map.getPane("labels").style.zIndex = 450; map.getPane("labels").style.pointerEvents = "none";
@@ -247,9 +256,9 @@
     };
     const labels = L.tileLayer(esri("Canvas/World_Light_Gray_Reference"), { ...opt, pane: "labels" });
     bases["Light"].addTo(map); labels.addTo(map);
-    L.control.layers(bases, { "Place labels": labels }, { position: "topright", collapsed: true }).addTo(map);
+    L.control.layers(bases, { "Place labels": labels }, { position: "bottomright", collapsed: true }).addTo(map);
     L.control.scale({ imperial: false, position: "bottomleft" }).addTo(map);
-    const Full = L.Control.extend({ options: { position: "topleft" }, onAdd() {
+    const Full = L.Control.extend({ options: { position: "bottomright" }, onAdd() {
       const b = L.DomUtil.create("a", "leaflet-bar leaflet-fs"); b.href = "#"; b.title = "Full screen"; b.innerHTML = "⛶";
       L.DomEvent.on(b, "click", (e) => { L.DomEvent.preventDefault(e); L.DomEvent.stopPropagation(e);
         const fig = document.getElementById("figure");
@@ -264,7 +273,7 @@
     geoLayer = L.geoJSON(geo, { style: styleFor, onEachFeature: bindFeature }).addTo(map);
     circleLayer = L.layerGroup();
     const b = idnBounds();
-    map.fitBounds(b, { padding: [8, 8], animate: false });
+    fitIndonesia(false);
     map.setMinZoom(map.getZoom() - 1);
     map.setMaxBounds(b.pad(0.5));
   }
@@ -870,11 +879,12 @@
       const b = e.target.closest("[data-detail]");
       if (b) openDetail(b.dataset.detail);
     });
+    $(".legend-head").addEventListener("click", () => $(".legend-card").classList.toggle("collapsed"));
     $("#reset").addEventListener("click", () => {
       Object.assign(state, { tab: "pemenang", pair: "02", multi: false, mbgMode: "jumlah", bivPair: "02", bivVar: "miskin", sel: null, cmp: null });
       map.closePopup();
       $("#search").value = "";
-      map.invalidateSize(); map.fitBounds(idnBounds(), { padding: [8, 8] });
+      fitIndonesia();
       renderAll();
     });
     $("#btn-table").addEventListener("click", () => { renderTable(); openOverlay("#ov-table"); });
@@ -897,7 +907,7 @@
       if (e.key === "Escape") document.querySelectorAll(".overlay").forEach((ov) => (ov.hidden = true));
     });
     let t;
-    window.addEventListener("resize", () => { clearTimeout(t); t = setTimeout(() => { map.invalidateSize(); miniMaps.forEach(({ m }) => m.invalidateSize()); }, 150); });
+    window.addEventListener("resize", () => { clearTimeout(t); t = setTimeout(() => { fitIndonesia(false); miniMaps.forEach(({ m }) => m.invalidateSize()); }, 150); });
   }
 
   /* ------------------------------------------------------------------
