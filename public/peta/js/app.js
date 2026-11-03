@@ -264,10 +264,9 @@
     geoLayer = L.geoJSON(geo, { style: styleFor, onEachFeature: bindFeature }).addTo(map);
     circleLayer = L.layerGroup();
     const b = idnBounds();
-    map.fitBounds(b, { padding: [8, 8] });
-    map.setView(b.getCenter(), Math.round(map.getZoom()), { animate: false });
-    map.setMinZoom(map.getZoom() - 0.5);
-    map.setMaxBounds(b.pad(0.25));
+    map.fitBounds(b, { padding: [8, 8], animate: false });
+    map.setMinZoom(map.getZoom() - 1);
+    map.setMaxBounds(b.pad(0.5));
   }
 
   function bindFeature(feature, layer) {
@@ -698,10 +697,6 @@
     if (opts.noPopup) return;
     if (state.tab === "perolehan" && state.multi) { openDetail(key); return; }
     const at = latlng || centroids[key];
-    if (!latlng) {
-      const lyr = geoLayer.getLayers().find((l) => l.feature.properties._key === key);
-      if (lyr) map.fitBounds(lyr.getBounds(), { maxZoom: 6, padding: [40, 40], animate: false });
-    }
     L.popup({ maxWidth: 300, autoPanPadding: [16, 16], className: "prov-pop" }).setLatLng(at).setContent(popupHTML(r)).openOn(map);
   }
 
@@ -879,7 +874,7 @@
       Object.assign(state, { tab: "pemenang", pair: "02", multi: false, mbgMode: "jumlah", bivPair: "02", bivVar: "miskin", sel: null, cmp: null });
       map.closePopup();
       $("#search").value = "";
-      map.fitBounds(idnBounds(), { padding: [8, 8] }); map.setView(idnBounds().getCenter(), Math.round(map.getZoom()));
+      map.invalidateSize(); map.fitBounds(idnBounds(), { padding: [8, 8] });
       renderAll();
     });
     $("#btn-table").addEventListener("click", () => { renderTable(); openOverlay("#ov-table"); });
